@@ -27,6 +27,7 @@ func JSONErr(w http.ResponseWriter, msg string, statusCode int) {
 
 func CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	var sub Subscription
+
 	if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 		JSONErr(w, err.Error(), http.StatusBadRequest)
 		return
