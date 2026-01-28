@@ -10,11 +10,14 @@ import (
 )
 
 func main() {
-	if _, err := database.DBConn(); err != nil {
+	if err := database.DBConn(); err != nil {
 		log.Fatalln(err)
 	}
+
 	r := initRouter()
 	http.ListenAndServe(":8080", r)
+
+	defer database.DB.Close()
 }
 
 func initRouter() *chi.Mux {

@@ -8,29 +8,27 @@ import (
 )
 
 const (
-	InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) values (?,?,?,?)"
+	InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) values (?,?,?,?) on duplicate key update service_name = values(service_name), price = values(price), user_id = values(user_id), start_date = values(start_date)"
 )
 
-type DB struct {
-	*sql.DB
-}
+var DB *sql.DB
 
-func DBConn() (*DB, error) {
+func DBConn() error {
 	var cfg string
 	db, err := sql.Open("postgres", cfg)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
-	return &DB{db}, nil
+	return nil
 }
 
-func (db *DB) CreateSubscription(sub *structs.Subscription) error {
-	if _, err := db.Exec(InsertQuery, sub.ServiceName, sub.Price, sub.UserId, sub.StartDate); err != nil {
+func CreateSubscription(sub *structs.Subscription) error {
+	if _, err := DB.Exec(InsertQuery, sub.ServiceName, sub.Price, sub.UserId, sub.StartDate); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
