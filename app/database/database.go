@@ -22,3 +22,4 @@ func NewDB(cfg string) (*DB, error)  {
 	
 	return &DB{db}, nil
 }
+
