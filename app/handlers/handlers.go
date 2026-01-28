@@ -3,21 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/gimaevra94/test-effective-mobile/app/structs"
 )
 
-type Subscription struct {
-	ServiceName string `json:"service_name"`
-	Price       int    `json:"price"`
-	UserId      string `json:"user_id"`
-	StartDate   string `json:"start_date"`
-}
-
-type Responce struct {
-	Msg string `json:"msg"`
-}
-
 func JSONErr(w http.ResponseWriter, msg string, statusCode int) {
-	resp := Responce{
+	resp := structs.Responce{
 		Msg: msg,
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -26,12 +17,11 @@ func JSONErr(w http.ResponseWriter, msg string, statusCode int) {
 }
 
 func CreateSubscription(w http.ResponseWriter, r *http.Request) {
-	var sub Subscription
+	var sub structs.Subscription
 
 	if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 		JSONErr(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	
 }
