@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) values (?,?,?,?) on duplicate key update service_name = values(service_name), price = values(price), user_id = values(user_id), start_date = values(start_date)"
+
+	uniqueUserService = "create uniaue index if not exists unique_user_service on subscriptions (user_id, service_name);"
+	InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) values ($1, $2, $3, $4) on conflict (user_id, service_name) do update est price = excluded.price"
 )
 
 var DB *sql.DB
@@ -24,6 +26,7 @@ func DBConn() error {
 		return errors.WithStack(err)
 	}
 
+	DB=db
 	return nil
 }
 
