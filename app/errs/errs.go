@@ -1,3 +1,4 @@
+// Пакет предоставляет модуль для обработки ошибок и отправки JSON ответа клиенту.
 package errs
 
 import (
@@ -9,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Функция предоставляет JSON ответ клиенту в случае ошибки и логирует ее.
+// Принимает на вход Response для записи сообщения об ошибке и http статуса,
+// И саму ошибку для логирования.
+// Если ошибка приходит без трассировки функция добавляет ее к ошибке перед логированием.
 func ErrLogAndResp(w http.ResponseWriter, err error, msg string, statusCode int) {
 	resp := structs.Responce{
 		Msg: msg,
