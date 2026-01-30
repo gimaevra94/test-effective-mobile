@@ -13,16 +13,16 @@ func main() {
 	if err := database.DBConn(); err != nil {
 		log.Fatalln(err)
 	}
+	defer database.DB.Close()
 
 	r := initRouter()
 	http.ListenAndServe(":8080", r)
 
-	defer database.DB.Close()
 }
 
 func initRouter() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("api/create-subscription", handlers.CreateSubscription)
+	r.Post("/api/v1/subscription", handlers.CreateSubscription)
 	return r
 }
