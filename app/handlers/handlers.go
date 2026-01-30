@@ -1,3 +1,4 @@
+// Пакет предоставляет хендлеры для обработки CRUDL операций
 package handlers
 
 import (
@@ -34,7 +35,7 @@ func CreateSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location := fmt.Sprintf("/api/v1/subscriptions/%s_%s", sub.UserId, sub.ServiceName)
+	location := fmt.Sprintf("/api/v1/subscription/%s_%s", sub.UserId, sub.ServiceName)
 	w.Header().Set("Location", location)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

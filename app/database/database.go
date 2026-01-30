@@ -31,7 +31,7 @@ func DBConn() error {
 	return nil
 }
 
-// Функция реализует операцию create добавляя в базу данных новую строку.
+// Функция реализует операцию "create" добавляя в базу данных новую строку.
 // Проверяет наличие дубля и в случае его отсутствия добавляет поля структуры базу данных.
 func CreateSubscription(sub *structs.Subscription) error {
 	if _, err := DB.Exec(InsertQuery, sub.ServiceName, sub.Price, sub.UserId, sub.StartDate); err != nil {
