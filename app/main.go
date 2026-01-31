@@ -13,19 +13,20 @@ import (
 // Инициализирует роутер.
 // Запускает сервер
 func main() {
-	if err := database.DBConn(); err != nil {
+	var cfg string
+	db, err := database.DBConn(cfg)
+	if err != nil {
 		log.Fatalln(err)
 	}
-	defer database.DB.Close()
+	defer db.DB.Close()
 
-	r := initRouter()
+	r := initRouter(db)
 	http.ListenAndServe(":8080", r)
-
 }
 
-func initRouter() *chi.Mux {
+func initRouter(db *database.DB) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("/api/v1/subscription", handlers.CreateSubscription)
+	r.Post("/api/v1/subscription", handlers.CreateSubscription(db))
 	return r
 }
