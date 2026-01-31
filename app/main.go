@@ -9,6 +9,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Открывает соединение с базой данных.
+// Инициализирует роутер.
+// Запускает сервер
 func main() {
 	if err := database.DBConn(); err != nil {
 		log.Fatalln(err)
