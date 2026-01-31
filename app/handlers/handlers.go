@@ -20,6 +20,9 @@ import (
 // Если все проверки пройдены переменная,
 // в которую был декодирован запрос передается в CreateSubscription
 func CreateSubscription(w http.ResponseWriter, r *http.Request) {
+	if r.Method!=http.MethodPost{
+		errs.ErrLogAndResp(w,)
+	}
 	var sub structs.Subscription
 	if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 		errs.ErrLogAndResp(w, err, "Bad input", http.StatusBadRequest)
