@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/errs"
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
@@ -22,29 +23,31 @@ import (
 func CreateSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			err := errors.New("Method not allowed")
-			stErr := errors.WithStack(err)
-			errs.ErrLogAndResp(w, stErr, "Method not allowed", http.StatusBadRequest)
+			err := errors.New(consts.MethodNotAllowed)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusMethodNotAllowed)
+			return
 		}
 
 		var sub structs.Subscription
 		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
-			errs.ErrLogAndResp(w, err, "Bad input", http.StatusBadRequest)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
 			return
 		}
 		defer r.Body.Close()
 
-		if sub.Price == 0 || sub.ServiceName == "" || sub.StartDate == "" {
-			err := errors.New("some value is empty")
-			errs.ErrLogAndResp(w, err, "some value is empty", http.StatusBadRequest)
+		if sub.Price <= 0 || sub.ServiceName == "" || sub.StartDate == "" {
+			err := errors.New(consts.EmptyValue)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
+			return
 		}
 
-		if _, err := time.Parse("01-2026", sub.StartDate); err != nil {
-			errs.ErrLogAndResp(w, err, "Invalid date format. Use MM-YYYY", http.StatusBadRequest)
+		if _, err := time.Parse("01-2006", sub.StartDate); err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InvalidDate, http.StatusBadRequest)
+			return
 		}
 
 		if err := db.CreateSubscription(&sub); err != nil {
-			errs.ErrLogAndResp(w, err, "Internal server error", 500)
+			errs.ErrLogAndResp(w, err, consts.InternalServerError, 500)
 			return
 		}
 
@@ -53,5 +56,35 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(sub)
+	}
+}
+
+func GetSubscription(db *database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var sub structs.Subscription
+
+		if r.Method != http.MethodGet {
+			err := errors.New(consts.MethodNotAllowed)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusMethodNotAllowed)
+			return
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
+			return
+		}
+
+		if sub.Price <= 0 || sub.ServiceName == "" || sub.StartDate == "" || sub.UserId == "" {
+			err := errors.New(consts.EmptyValue)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
+			return
+		}
+
+		if _, err := time.Parse("01-2006", sub.StartDate); err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InvalidDate, http.StatusBadRequest)
+			return
+		}
+
+		
 	}
 }
