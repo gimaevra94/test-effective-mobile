@@ -13,6 +13,12 @@ import (
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
 )
 
+// Функция реализует api "/api/v1/subscription".
+// Приходящий запрос декодируется.
+// Проверяется на наличие пустых полей.
+// Поле даты проветяется на соответствие формату.
+// Если все проверки пройдены переменная,
+// в которую был декодирован запрос передается в CreateSubscription
 func CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	var sub structs.Subscription
 	if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
