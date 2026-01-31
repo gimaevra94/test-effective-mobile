@@ -4,14 +4,13 @@ package database
 import (
 	"database/sql"
 
+	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
-const (
-	InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) values ($1, $2, $3, $4)"
-)
+const ()
 
 type DB struct {
 	*sql.DB
@@ -33,7 +32,7 @@ func DBConn(cfg string) (*DB, error) {
 // Функция реализует операцию "create" добавляя в базу данных новую строку.
 // Проверяет наличие дубля и в случае его отсутствия добавляет поля структуры базу данных.
 func (db *DB) CreateSubscription(sub *structs.Subscription) error {
-	if _, err := db.DB.Exec(InsertQuery, sub.ServiceName, sub.Price, sub.UserId, sub.StartDate); err != nil {
+	if _, err := db.DB.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserId, sub.StartDate); err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			err := errors.New("Already exists")
@@ -42,4 +41,12 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 		return errors.WithStack(err)
 	}
 	return nil
+}
+
+func (db *DB) GetSubscription(sub structs.Subscription)  {
+	row := db.DB.QueryRow(consts.SelectQuery, sub.UserId, sub.ServiceName)
+	var dbRow structs.Subscription
+	if err := row.Scan(&dbRow); err != nil {
+		return errors.WithStack(err)
+	}
 }
