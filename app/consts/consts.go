@@ -1,5 +1,7 @@
 package consts
 
+import "github.com/gimaevra94/test-effective-mobile/app/consts"
+
 // For api handlers
 const (
 	MethodNotAllowed    = "Method not allowed"
@@ -10,8 +12,10 @@ const (
 	InternalServerError = "Internal server error"
 )
 
-// SQL requests
+// Vars
 const (
-	InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) values ($1, $2, $3, $4)"
-	SelectQuery = "select service_name, price, user_id, start_date from subscriptions where user_id = ? and service_name = ?"
+	ServiceName = "service_name"
+	Price       = "price"
+	UserID      = "user_id"
+	StartDate   = "start_date"
 )

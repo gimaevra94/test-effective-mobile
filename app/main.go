@@ -29,6 +29,7 @@ func initRouter(db *database.DB) *chi.Mux {
 
 	r.Post("/api/v1/subscription", handlers.CreateSubscription(db))
 	r.Get("/api/v1/subscription/{user_id}/{service_name}", handlers.GetSubscription(db))
-	
+	r.Patch("/apiv1/subscription/{user_id}/{service_name}", handlers.UpdateSubscription(db))
+
 	return r
 }

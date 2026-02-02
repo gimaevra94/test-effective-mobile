@@ -99,3 +99,21 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(row)
 	}
 }
+
+func UpdateSubscription(db *database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+if r.Method!=http.MethodPatch{
+	err:=errors.New(consts.MethodNotAllowed)
+	errs.ErrLogAndResp(w,errors.WithStack(err),consts.MethodNotAllowed,http.StatusBadRequest)
+	return
+}
+
+		var update structs.Subscription
+		if err:=json.NewDecoder(r.Body).Decode(&update); err!=nil{
+			errs.ErrLogAndResp(w,errors.WithStack(err),consts.BadInput,http.StatusBadRequest)
+			return 
+		}
+
+userID:=r.PathValue("user_id")
+	}
+}

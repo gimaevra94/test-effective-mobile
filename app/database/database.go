@@ -10,7 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-const ()
+	//InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) //values ($1, $2, $3, $4)"
+	SelectQuery = "select " + consts.Service_name + ", " + consts.Price + ", " + consts.UserID + ", " + consts.StartDate + "from subscriptions where " consts.UserID + " = ? and " + consts.ServiceName + " = ?"
 
 type DB struct {
 	*sql.DB
