@@ -32,7 +32,7 @@ func DBConn(cfg string) (*DB, error) {
 // Функция реализует операцию "create" добавляя в базу данных новую строку.
 // Проверяет наличие дубля и в случае его отсутствия добавляет поля структуры базу данных.
 func (db *DB) CreateSubscription(sub *structs.Subscription) error {
-	if _, err := db.DB.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserId, sub.StartDate); err != nil {
+	if _, err := db.DB.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserID, sub.StartDate); err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			err := errors.New("Already exists")
@@ -43,10 +43,14 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 	return nil
 }
 
-func (db *DB) GetSubscription(sub structs.Subscription)  {
-	row := db.DB.QueryRow(consts.SelectQuery, sub.UserId, sub.ServiceName)
+func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
+	row := db.DB.QueryRow(consts.SelectQuery, sub.UserID, sub.ServiceName)
 	var dbRow structs.Subscription
-	if err := row.Scan(&dbRow); err != nil {
-		return errors.WithStack(err)
+	if err := row.Scan(&dbRow.ServiceName,&dbRow.Price,dbRow.UserID,dbRow.StartDate); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.WithStack(err)
+		}
+		return nil, errors.WithStack(err)
 	}
+	return &dbRow, nil
 }
