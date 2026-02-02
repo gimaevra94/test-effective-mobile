@@ -105,13 +105,22 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 		if r.Method != http.MethodPatch {
 			err := errors.New(consts.MethodNotAllowed)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusBadRequest)
-	return
-}
+			return
+		}
 
 		var update structs.Subscription
-		if err:=json.NewDecoder(r.Body).Decode(&update); err!=nil{
-			errs.ErrLogAndResp(w,errors.WithStack(err),consts.BadInput,http.StatusBadRequest)
-			return 
+		if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
+			return
+		}
+
+		userID := r.PathValue(consts.User_id)
+		serviceName := r.PathValue(consts.Service_name)
+
+		if userID == "" || serviceName == "" {
+			err := errors.New(consts.EmptyValue)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
+			return
 		}
 
 		
