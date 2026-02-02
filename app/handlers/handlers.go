@@ -42,7 +42,7 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		if _, err := time.Parse("01-2006", sub.StartDate); err != nil {
+		if _, err := time.Parse(consts.TimeFormat, sub.StartDate); err != nil {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InvalidDate, http.StatusBadRequest)
 			return
 		}
@@ -52,7 +52,7 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		location := fmt.Sprintf("/api/v1/subscription/%s_%s", sub.UserID, sub.ServiceName)
+		location := fmt.Sprintf(consts.APIPathV1+"/%s_%s", sub.UserID, sub.ServiceName)
 		w.Header().Set("Location", location)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -70,8 +70,8 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		userID := r.PathValue("user_id")
-		serviceName := r.PathValue("service_name")
+		userID := r.PathValue(consts.User_id)
+		serviceName := r.PathValue(consts.Service_name)
 
 		if userID == "" || serviceName == "" {
 			err := errors.New(consts.EmptyValue)

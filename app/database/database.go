@@ -19,7 +19,7 @@ type DB struct {
 
 // Функция открывает соединение с базой данных.
 func DBConn(cfg string) (*DB, error) {
-	db, err := sql.Open("postgres", cfg)
+	db, err := sql.Open(consts.Driver, cfg)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -36,7 +36,7 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 	if _, err := db.DB.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserID, sub.StartDate); err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-			err := errors.New("Already exists")
+			err := errors.New(consts.AlreadyExist)
 			return errors.WithStack(err)
 		}
 		return errors.WithStack(err)
