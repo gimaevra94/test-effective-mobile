@@ -52,3 +52,11 @@ func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription,
 	}
 	return &dbRow, nil
 }
+
+func (db *DB) UpdateSubscription(update *structs.Subscription) (*sql.Result, error) {
+	row, err := db.Exec(consts.UpdateQuery, update.UserID, update.ServiceName)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &row, nil
+}
