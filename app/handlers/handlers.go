@@ -122,7 +122,16 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
 		}
+		update.UserID, update.ServiceName = userID, serviceName
 
-		
+		result, err := db.UpdateSubscription(&update)
+		if err != nil {
+			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(result)
 	}
 }
