@@ -14,7 +14,8 @@ const (
 // For SQL Requests
 const (
 	InsertQuery = "insert into subscription (" + ServiceName + ", " + Price + ", " + UserID + ", " + StartDate + ") values ($1, $2, $3, $4)"
-	SelectQuery = "select " + ServiceName + ", " + Price + ", " + UserID + ", " + StartDate + "from subscription where " + UserID + " = ? and " + ServiceName + " = ?"
+	SelectQuery = "select " + ServiceName + ", " + Price + ", " + UserID + ", " + StartDate + "from subscription where " + UserID + " = $1 and " + ServiceName + " = $2"
+	UpdateQuery = "update subscription set " + Price + "= $1 where " + UserID + "= $2 and " + ServiceName + "= $3"
 )
 
 // Vars
