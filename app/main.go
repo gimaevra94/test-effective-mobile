@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/handlers"
 	"github.com/go-chi/chi/v5"

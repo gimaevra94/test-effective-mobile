@@ -102,9 +102,9 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 
 func UpdateSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-if r.Method!=http.MethodPatch{
-	err:=errors.New(consts.MethodNotAllowed)
-	errs.ErrLogAndResp(w,errors.WithStack(err),consts.MethodNotAllowed,http.StatusBadRequest)
+		if r.Method != http.MethodPatch {
+			err := errors.New(consts.MethodNotAllowed)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusBadRequest)
 	return
 }
 
@@ -114,6 +114,6 @@ if r.Method!=http.MethodPatch{
 			return 
 		}
 
-userID:=r.PathValue("user_id")
+		
 	}
 }

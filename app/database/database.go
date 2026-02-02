@@ -10,9 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-	//InsertQuery = "insert into subscriptions (service_name, price, user_id, start_date) //values ($1, $2, $3, $4)"
-	SelectQuery = "select " + consts.Service_name + ", " + consts.Price + ", " + consts.UserID + ", " + consts.StartDate + "from subscriptions where " consts.UserID + " = ? and " + consts.ServiceName + " = ?"
-
 type DB struct {
 	*sql.DB
 }
@@ -47,7 +44,7 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
 	row := db.DB.QueryRow(consts.SelectQuery, sub.UserID, sub.ServiceName)
 	var dbRow structs.Subscription
-	if err := row.Scan(&dbRow.ServiceName,&dbRow.Price,dbRow.UserID,dbRow.StartDate); err != nil {
+	if err := row.Scan(&dbRow.ServiceName, &dbRow.Price, dbRow.UserID, dbRow.StartDate); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.WithStack(err)
 		}

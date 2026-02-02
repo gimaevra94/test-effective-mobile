@@ -1,14 +1,12 @@
 package consts
 
-import "github.com/gimaevra94/test-effective-mobile/app/consts"
-
 // For api handlers
 const (
 	MethodNotAllowed    = "Method not allowed"
 	BadInput            = "Incorrect input"
 	EmptyValue          = "The input has an empty value"
 	InvalidDate         = "Invalid date. Use MM-YYYY"
-	NotExist            = "The row does not exist"
+	NotExist            = "The subscription does not exist"
 	InternalServerError = "Internal server error"
 	AlreadyExist        = "The subscription already exists"
 )

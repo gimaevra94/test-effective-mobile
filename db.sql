@@ -1,4 +1,4 @@
-CREATE TABLE subscriptions (
+CREATE TABLE subscription (
     id SERIAL PRIMARY KEY,
     service_name VARCHAR(255) NOT NULL,
     price INTEGER NOT NULL,
