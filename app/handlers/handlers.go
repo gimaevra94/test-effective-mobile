@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,7 +36,7 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		if sub.Price <= 0 || sub.ServiceName == "" || sub.StartDate == "" {
+		if sub.Price <= 0 || sub.ServiceName == "" || sub.UserID == "" || sub.StartDate == "" {
 			err := errors.New(consts.EmptyValue)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
@@ -47,11 +48,11 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		}
 
 		if err := db.CreateSubscription(&sub); err != nil {
-			errs.ErrLogAndResp(w, err, consts.InternalServerError, 500)
+			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
 
-		location := fmt.Sprintf("/api/v1/subscription/%s_%s", sub.UserId, sub.ServiceName)
+		location := fmt.Sprintf("/api/v1/subscription/%s_%s", sub.UserID, sub.ServiceName)
 		w.Header().Set("Location", location)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -69,22 +70,32 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
-			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
-			return
-		}
+		userID := r.PathValue("user_id")
+		serviceName := r.PathValue("service_name")
 
-		if sub.Price <= 0 || sub.ServiceName == "" || sub.StartDate == "" || sub.UserId == "" {
+		if userID == "" || serviceName == "" {
 			err := errors.New(consts.EmptyValue)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
 		}
 
-		if _, err := time.Parse("01-2006", sub.StartDate); err != nil {
-			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InvalidDate, http.StatusBadRequest)
+		sub = structs.Subscription{
+			UserID:      userID,
+			ServiceName: serviceName,
+		}
+
+		row, err := db.GetSubscription(&sub)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+				return
+			}
+			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
 
-		
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(row)
 	}
 }
