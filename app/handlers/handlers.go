@@ -135,3 +135,9 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(result)
 	}
 }
+
+func DeleteSubscription(db *database.DB) http.HandlerFunc{
+	return func(w http.ResponseWriter, r *http.Request) {
+		 
+	}
+}
