@@ -18,7 +18,7 @@ const (
 	UpdateQuery = "update subscription set " + Price + "= $1 where " + UserID + "= $2 and " + ServiceName + "= $3"
 )
 
-// Vars
+// Path values
 const (
 	ServiceName = "service_name"
 	Price       = "price"

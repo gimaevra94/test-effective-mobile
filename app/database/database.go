@@ -54,6 +54,7 @@ func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription,
 }
 
 func (db *DB) UpdateSubscription(update *structs.Subscription) (*sql.Result, error) {
+	// проверка
 	row, err := db.Exec(consts.UpdateQuery, update.UserID, update.ServiceName)
 	if err != nil {
 		return nil, errors.WithStack(err)

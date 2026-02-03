@@ -114,8 +114,13 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		userID := r.PathValue(consts.User_id)
-		serviceName := r.PathValue(consts.Service_name)
+		if update.Price <= 0 {
+			err := errors.New(consts.EmptyValue)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
+			return
+		}
+
+		userID, serviceName := r.PathValue(consts.User_id), r.PathValue(consts.Service_name)
 
 		if userID == "" || serviceName == "" {
 			err := errors.New(consts.EmptyValue)
@@ -136,8 +141,35 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
-func DeleteSubscription(db *database.DB) http.HandlerFunc{
+func DeleteSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		 
+		if r.Method != http.MethodDelete {
+			err := errors.New(consts.MethodNotAllowed)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusBadRequest)
+			return
+		}
+
+		var delete structs.Subscription
+		if err := json.NewDecoder(r.Body).Decode(&delete); err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
+			return
+		}
+
+		userID, serviceName := r.PathValue(consts.User_id), r.PathValue(consts.Service_name)
+
+		if userID == "" || serviceName == "" {
+			err := errors.New(consts.EmptyValue)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
+			return
+		}
+
+		delete, err := db.DeleteSubscription(delete)
+		if err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 	}
 }
