@@ -41,23 +41,60 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 	return nil
 }
 
+// Функция реализует операцию "get" получая строку из базы данных.
 func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
-	row := db.DB.QueryRow(consts.SelectQuery, sub.UserID, sub.ServiceName)
-	var dbRow structs.Subscription
-	if err := row.Scan(&dbRow.ServiceName, &dbRow.Price, dbRow.UserID, dbRow.StartDate); err != nil {
+	row := db.DB.QueryRow(consts.SelectQuery, sub.ServiceName, sub.UserID)
+	var result structs.Subscription
+	if err := row.Scan(&result.ServiceName, &result.Price, result.UserID, result.StartDate); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.WithStack(err)
 		}
 		return nil, errors.WithStack(err)
 	}
-	return &dbRow, nil
+	return &result, nil
 }
 
-func (db *DB) UpdateSubscription(update *structs.Subscription) (*sql.Result, error) {
-	// проверка
-	row, err := db.Exec(consts.UpdateQuery, update.UserID, update.ServiceName)
+// Функция реализует операцию "update" обновляя существующую в базе данных строку.
+// // Проверяет наличие строки и в случае ее присутствия обновляет поле "price".
+func (db *DB) UpdateSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
+	tx, err := db.Begin()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return &row, nil
+
+	defer func() {
+		if err := recover(); err != nil {
+			tx.Rollback()
+			panic(err)
+		}
+	}()
+
+	row := tx.QueryRow(consts.UpdateQuery, sub.ServiceName, sub.UserID)
+	var result structs.Subscription
+	if err = row.Scan(&result.ServiceName, &result.Price, &result.UserID, &result.StartDate); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.WithStack(err)
+		}
+		return nil, errors.WithStack(err)
+	}
+
+	return &result, nil
+}
+
+func (db *DB) DeleteSubscription(sub *structs.Subscription) error {
+	result, err := db.Exec(consts.DeleteQuery, sub.ServiceName, sub.UserID)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
