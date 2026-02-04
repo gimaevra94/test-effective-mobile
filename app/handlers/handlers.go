@@ -195,3 +195,18 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func ListSubscription(db *database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			err := errors.New(consts.MethodNotAllowed)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusBadRequest)
+			return
+		}
+		
+		keysQuery:=map[string]bool{}
+		for i :=range r.URL.Query(){
+if
+		}
+	}
+}
