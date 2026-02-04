@@ -62,7 +62,6 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 
 func GetSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var sub structs.Subscription
 
 		if r.Method != http.MethodGet {
 			err := errors.New(consts.MethodNotAllowed)
@@ -79,12 +78,12 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		sub = structs.Subscription{
+		sub := structs.Subscription{
 			UserID:      userID,
 			ServiceName: serviceName,
 		}
 
-		row, err := db.GetSubscription(&sub)
+		result, err := db.GetSubscription(&sub)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
@@ -96,7 +95,7 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(row)
+		json.NewEncoder(w).Encode(result)
 	}
 }
 
@@ -108,13 +107,14 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		var update structs.Subscription
-		if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+		var sub structs.Subscription
+		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
 			return
 		}
+		defer r.Body.Close()
 
-		if update.Price <= 0 {
+		if sub.Price <= 0 {
 			err := errors.New(consts.EmptyValue)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
@@ -127,10 +127,15 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
 		}
-		update.UserID, update.ServiceName = userID, serviceName
 
-		result, err := db.UpdateSubscription(&update)
+		sub.UserID, sub.ServiceName = userID, serviceName
+
+		result, err := db.UpdateSubscription(&sub)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+				return
+			}
 			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
@@ -149,11 +154,12 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		var delete structs.Subscription
-		if err := json.NewDecoder(r.Body).Decode(&delete); err != nil {
+		var sub structs.Subscription
+		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
 			return
 		}
+		defer r.Body.Close()
 
 		userID, serviceName := r.PathValue(consts.User_id), r.PathValue(consts.Service_name)
 
@@ -163,8 +169,13 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		delete, err := db.DeleteSubscription(delete)
+		sub.UserID, sub.ServiceName = userID, serviceName
+		err := db.DeleteSubscription(&sub)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusFound)
+				return
+			}
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
