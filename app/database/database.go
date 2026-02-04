@@ -44,26 +44,26 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 
 // Функция реализует операцию "get" получая строку из базы данных.
 // Сканирует полученные поля в структуру и отдает вызывающей функции.
-func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
+func (db *DB) GetSubscription(sub *structs.Subscription) (structs.Subscription, error) {
 	row := db.DB.QueryRow(consts.SelectQuery, sub.ServiceName, sub.UserID)
 	var result structs.Subscription
 	if err := row.Scan(&result.ServiceName, &result.Price, result.UserID, result.StartDate); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.WithStack(err)
+			return structs.Subscription{}, errors.WithStack(err)
 		}
-		return nil, errors.WithStack(err)
+		return structs.Subscription{}, errors.WithStack(err)
 	}
-	return &result, nil
+	return result, nil
 }
 
 // Функция реализует операцию "update" обновляя существующую в базе данных строку.
 // В одном запросе происходит операция обновления и возврата строки.
 // По этому сначала открывается транзакция и через нее выполняется запрос.
 // Поля возвращенной строки сканируются в структуру которая возвращается вызывающей функции.
-func (db *DB) UpdateSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
+func (db *DB) UpdateSubscription(sub *structs.Subscription) (structs.Subscription, error) {
 	tx, err := db.Begin()
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return structs.Subscription{}, errors.WithStack(err)
 	}
 
 	defer func() {
@@ -77,12 +77,12 @@ func (db *DB) UpdateSubscription(sub *structs.Subscription) (*structs.Subscripti
 	var result structs.Subscription
 	if err = row.Scan(&result.ServiceName, &result.Price, &result.UserID, &result.StartDate); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.WithStack(err)
+			return structs.Subscription{}, errors.WithStack(err)
 		}
-		return nil, errors.WithStack(err)
+		return structs.Subscription{}, errors.WithStack(err)
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // Функция реализует операцию 'delete' удаляя строку по ключу "service_name + user_id".

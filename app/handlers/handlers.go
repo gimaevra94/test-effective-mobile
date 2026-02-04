@@ -15,12 +15,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Функция реализует api "/api/v1/subscription".
+// Функция реализует 'create' API.
 // Приходящий запрос декодируется.
+// В запросе структура которую необходимо сохранить в базу данных.
 // Проверяется на наличие пустых полей.
 // Поле даты проветяется на соответствие формату.
 // Если все проверки пройдены переменная,
-// в которую был декодирован запрос передается в CreateSubscription
+// в которую был декодирован запрос в виде структуры передается в db.CreateSubscription
+// для работы с базой данных.
 func CreateSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -36,7 +38,7 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		if sub.Price <= 0 || sub.ServiceName == "" || sub.UserID == "" || sub.StartDate == "" {
+		if sub.ServiceName == "" || sub.Price <= 0 || sub.UserID == "" || sub.StartDate == "" {
 			err := errors.New(consts.EmptyValue)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
@@ -60,27 +62,28 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// Функция реализует 'get' API.
+// Из пути запроса берутся поля составляющие ключ для поиска в базе данных.
+// Проверяются на наличие пустых полей и передаются в виде структуры в db.GetSubscriprion для работы с базой данных.
+// Возвращает структуру для дальнейшей работы с ней.
 func GetSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		if r.Method != http.MethodGet {
 			err := errors.New(consts.MethodNotAllowed)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 
-		userID := r.PathValue(consts.UserID)
-		serviceName := r.PathValue(consts.ServiceName)
-
-		if userID == "" || serviceName == "" {
+		serviceName, userID := r.PathValue(consts.UserID), r.PathValue(consts.ServiceName)
+		if serviceName == "" || userID == "" {
 			err := errors.New(consts.EmptyValue)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
 		}
 
 		sub := structs.Subscription{
-			UserID:      userID,
 			ServiceName: serviceName,
+			UserID:      userID,
 		}
 
 		result, err := db.GetSubscription(&sub)
@@ -99,6 +102,11 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// Функция реализует 'update' API.
+// Приходящий запрос декодируется.
+// В запросе хранится новое значение которым нужно заменить значение из базы данных.
+// Проверяется на наличие пустых полей и в виде структуры передается в db.UpdateSubscription
+// для работы с базой данных.
 func UpdateSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPatch {
@@ -120,16 +128,14 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		userID, serviceName := r.PathValue(consts.UserID), r.PathValue(consts.ServiceName)
-
-		if userID == "" || serviceName == "" {
+		serviceName, userID := r.PathValue(consts.ServiceName), r.PathValue(consts.UserID)
+		if serviceName == "" || userID == "" || sub.Price <= 0 {
 			err := errors.New(consts.EmptyValue)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
 			return
 		}
 
-		sub.UserID, sub.ServiceName = userID, serviceName
-
+		sub.ServiceName, sub.UserID = serviceName, userID
 		result, err := db.UpdateSubscription(&sub)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -146,6 +152,11 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// Функция реализует 'delete' API.
+// Приходящий запрос декодируется.
+// Он хранит в себе поля составляющие ключ для поиска в базе данных по которым необходимо найти строку и удалить.
+// Проверяется на наличие пустых полей и в виде структуры передается в db.UpdateSubscription
+// для работы с базой данных.
 func DeleteSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
