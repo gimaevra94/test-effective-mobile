@@ -69,8 +69,8 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		userID := r.PathValue(consts.User_id)
-		serviceName := r.PathValue(consts.Service_name)
+		userID := r.PathValue(consts.UserID)
+		serviceName := r.PathValue(consts.ServiceName)
 
 		if userID == "" || serviceName == "" {
 			err := errors.New(consts.EmptyValue)
@@ -120,7 +120,7 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		userID, serviceName := r.PathValue(consts.User_id), r.PathValue(consts.Service_name)
+		userID, serviceName := r.PathValue(consts.UserID), r.PathValue(consts.ServiceName)
 
 		if userID == "" || serviceName == "" {
 			err := errors.New(consts.EmptyValue)
@@ -161,7 +161,7 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		userID, serviceName := r.PathValue(consts.User_id), r.PathValue(consts.Service_name)
+		userID, serviceName := r.PathValue(consts.UserID), r.PathValue(consts.ServiceName)
 
 		if userID == "" || serviceName == "" {
 			err := errors.New(consts.EmptyValue)

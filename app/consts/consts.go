@@ -19,19 +19,17 @@ const (
 	DeleteQuery = "delete from subscription where " + ServiceName + " = $1 and " + UserID + " = &2"
 )
 
-// Path values
+// Requests paths values
 const (
 	ServiceName = "service_name"
 	Price       = "price"
 	UserID      = "user_id"
 	StartDate   = "start_date"
+	APIPathV1    = "/api/v1/subscription"
 )
 
 // Other
 const (
 	Driver       = "postgres"
 	TimeFormat   = "01-2006"
-	APIPathV1    = "/api/v1/subscription"
-	User_id      = "user_id"
-	Service_name = "service_name"
 )
