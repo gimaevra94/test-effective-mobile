@@ -15,6 +15,7 @@ type DB struct {
 }
 
 // Функция открывает соединение с базой данных.
+// Пингует его чтобы проверить готовность принимать запросы.
 func DBConn(cfg string) (*DB, error) {
 	db, err := sql.Open(consts.Driver, cfg)
 	if err != nil {
@@ -42,6 +43,7 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 }
 
 // Функция реализует операцию "get" получая строку из базы данных.
+// Сканирует полученные поля в структуру и отдает вызывающей функции.
 func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
 	row := db.DB.QueryRow(consts.SelectQuery, sub.ServiceName, sub.UserID)
 	var result structs.Subscription
@@ -55,7 +57,9 @@ func (db *DB) GetSubscription(sub *structs.Subscription) (*structs.Subscription,
 }
 
 // Функция реализует операцию "update" обновляя существующую в базе данных строку.
-// // Проверяет наличие строки и в случае ее присутствия обновляет поле "price".
+// В одном запросе происходит операция обновления и возврата строки.
+// По этому сначала открывается транзакция и через нее выполняется запрос.
+// Поля возвращенной строки сканируются в структуру которая возвращается вызывающей функции.
 func (db *DB) UpdateSubscription(sub *structs.Subscription) (*structs.Subscription, error) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -81,6 +85,8 @@ func (db *DB) UpdateSubscription(sub *structs.Subscription) (*structs.Subscripti
 	return &result, nil
 }
 
+// Функция реализует операцию 'delete' удаляя строку по ключу "service_name + user_id".
+// Так же запрашивается RowsAffected из result чтобы понять происзошло ли удаление.
 func (db *DB) DeleteSubscription(sub *structs.Subscription) error {
 	result, err := db.Exec(consts.DeleteQuery, sub.ServiceName, sub.UserID)
 	if err != nil {
