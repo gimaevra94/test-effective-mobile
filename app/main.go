@@ -25,6 +25,7 @@ func main() {
 	http.ListenAndServe(":8080", r)
 }
 
+// Обработчик маршрутов
 func initRouter(db *database.DB) *chi.Mux {
 	r := chi.NewRouter()
 
