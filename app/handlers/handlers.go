@@ -93,7 +93,6 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
-				return
 			}
 			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
@@ -144,7 +143,6 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
-				return
 			}
 			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
@@ -161,7 +159,7 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 // Он хранит в себе поля составляющие ключ для поиска в базе данных по которым необходимо найти строку и удалить.
 // Проверяется на наличие пустых полей и в виде структуры передается в db.UpdateSubscription
 // для работы с базой данных.
-// В результате успешного запроса к базе данных клиенту отправляется статусОК 
+// В результате успешного запроса к базе данных клиенту отправляется статусОК
 func DeleteSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
@@ -190,7 +188,6 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusFound)
-				return
 			}
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
 			return
@@ -202,6 +199,7 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 }
 
 // Функция реализует 'list' API.
+// В качестве соединения с базой данных принимает не *database.DB, а *grom.DB.
 // Фильтры из запроса проверяются на соответствие разрешенным фильтрам.
 // Все фильтры прошедшие проверку добавляются к последовательности запроса к базе данных.
 // Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
@@ -242,7 +240,76 @@ func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		if len(subs) == 0 {
+			err := errors.New(consts.NotExist)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.NotExist, http.StatusNotFound)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(subs)
 	}
+}
+
+// Функция принимает из запроса ключи, проверяет их на соответствие формату,
+// и вызывает db.GetPeriodPricesSum для поиска строк по этим ключам.
+// База данных возвращает стоимость подписки за 1 месяц.
+// После этого вызывается priceSum которая считает сумму подписок за период.
+// Результат кодируется в JSON и отправляется клиенту.
+func GetPeriodPricesSum(db *database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			err := errors.New(consts.MethodNotAllowed)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.MethodNotAllowed, http.StatusBadRequest)
+			return
+		}
+
+		serviceName := r.PathValue(consts.ServiceName)
+		userID := r.PathValue(consts.UserID)
+		startDate := r.PathValue(consts.StartDate)
+		if serviceName == "" || userID == "" {
+			err := errors.New(consts.EmptyValue)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.EmptyValue, http.StatusBadRequest)
+			return
+		}
+
+		startDateTime, err := time.Parse(consts.TimeFormat, startDate)
+		if err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InvalidDate, http.StatusBadRequest)
+			return
+		}
+
+		sub := structs.Subscription{
+			ServiceName: serviceName,
+			UserID:      userID,
+		}
+
+		result, err := db.GetPeriodPrices(sub)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				errs.ErrLogAndResp(w, errors.WithStack(err), consts.NotExist, http.StatusNotFound)
+				return
+			}
+
+			err := errors.New(consts.InternalServerError)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
+			return
+		}
+
+		resSum := priceSum(result, startDateTime)
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resSum)
+	}
+}
+
+// Функция принимает стоимость подписки за один месяц и начало периода подписки.
+// Вычисляет колличество месяцев которые прошли с начала периода подписки,
+// и умножает их на стоимость подписки за один месяц.
+func priceSum(oneMouthPrice int, startDate time.Time) int {
+	totalDuration := time.Now().Sub(startDate)
+	oneMonthsAsHourses := 30 * 24
+	totalMonthsAsHourses := totalDuration.Hours()
+	mouthCount := totalMonthsAsHourses / float64(oneMonthsAsHourses)
+	priceSum := mouthCount * float64(oneMouthPrice)
+	return int(priceSum)
 }
