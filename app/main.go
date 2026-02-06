@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/handlers"
@@ -61,6 +62,7 @@ func initRouter(db *database.DB, gdb *gorm.DB) *chi.Mux {
 	r.Patch(consts.APIPathV1+"/{"+consts.UserID+"}/{"+consts.ServiceName+"}", handlers.UpdateSubscription(db))
 	r.Delete(consts.APIPathV1, handlers.DeleteSubscription(db))
 	r.Get(consts.APIPathV1, handlers.ListSubscription(gdb))
+	r.Get(consts.APIPathV1,handlers.GetPeriodPricesSum(db))
 
 	return r
 }
