@@ -7,6 +7,7 @@ import (
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/handlers"
+	"github.com/gimaevra94/test-effective-mobile/app/structs"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
@@ -40,6 +41,8 @@ func initDB() (*database.DB, *gorm.DB, error, error) {
 	if err != nil {
 		return nil, nil, nil, errors.WithStack(err)
 	}
+	gdb.AutoMigrate(&structs.Subscription{})
+
 	sqlDB, err := gdb.DB()
 	if err != nil {
 		log.Fatalln(err)

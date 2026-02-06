@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
@@ -24,6 +25,7 @@ import (
 // Если все проверки пройдены переменная,
 // в которую был декодирован запрос в виде структуры передается в db.CreateSubscription
 // для работы с базой данных.
+// Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
 func CreateSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -66,7 +68,7 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 // Функция реализует 'get' API.
 // Из пути запроса берутся поля составляющие ключ для поиска в базе данных.
 // Проверяются на наличие пустых полей и передаются в виде структуры в db.GetSubscriprion для работы с базой данных.
-// Возвращает структуру для дальнейшей работы с ней.
+// Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
 func GetSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -108,6 +110,7 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 // В запросе хранится новое значение которым нужно заменить значение из базы данных.
 // Проверяется на наличие пустых полей и в виде структуры передается в db.UpdateSubscription
 // для работы с базой данных.
+// Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
 func UpdateSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPatch {
@@ -158,6 +161,7 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 // Он хранит в себе поля составляющие ключ для поиска в базе данных по которым необходимо найти строку и удалить.
 // Проверяется на наличие пустых полей и в виде структуры передается в db.UpdateSubscription
 // для работы с базой данных.
+// В результате успешного запроса к базе данных клиенту отправляется статусОК 
 func DeleteSubscription(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
@@ -197,6 +201,10 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// Функция реализует 'list' API.
+// Фильтры из запроса проверяются на соответствие разрешенным фильтрам.
+// Все фильтры прошедшие проверку добавляются к последовательности запроса к базе данных.
+// Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
 func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -205,6 +213,36 @@ func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		
+		query := r.URL.Query()
+		dbQuery := gdb.Model(&structs.Subscription{})
+		allowedFilters := []string{
+			"service_name",
+			"price",
+			"user_id",
+			"start_date",
+		}
+
+		for _, v := range allowedFilters {
+			if q_v, ok := query[v]; ok && len(q_v) > 0 && q_v[0] != "" {
+
+				switch v {
+				case "price":
+					if price, err := strconv.Atoi(q_v[0]); err == nil {
+						dbQuery = dbQuery.Where(v+" = $1", price)
+					}
+				default:
+					dbQuery = dbQuery.Where(v+" = $1", q_v[0])
+				}
+			}
+		}
+
+		subs := []structs.Subscription{}
+		if err := dbQuery.Find(&subs); err != nil {
+			errs.ErrLogAndResp(w, errors.WithStack(err.Error), consts.NotExist, http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(subs)
 	}
 }
