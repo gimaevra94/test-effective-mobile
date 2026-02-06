@@ -104,3 +104,15 @@ func (db *DB) DeleteSubscription(sub *structs.Subscription) error {
 
 	return nil
 }
+
+func (db *DB) GetPeriodPrices(sub structs.Subscription) (int, error) {
+	row := db.QueryRow(consts.PriceSelectionQuery, sub.ServiceName, sub.UserID, sub.StartDate)
+	var result int
+	if err := row.Scan(&result); err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.WithStack(err)
+		}
+		return 0, errors.WithStack(err)
+	}
+	return result, nil
+}
