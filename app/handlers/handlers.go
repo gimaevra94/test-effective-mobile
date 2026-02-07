@@ -35,11 +35,11 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		}
 
 		var sub structs.Subscription
+		defer r.Body.Close()
 		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
 			return
 		}
-		defer r.Body.Close()
 
 		if sub.ServiceName == "" || sub.Price <= 0 || sub.UserID == "" || sub.StartDate == "" {
 			err := errors.New(consts.EmptyValue)
@@ -57,7 +57,7 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		location := fmt.Sprintf(consts.APIPathV1+"/%s_%s", sub.UserID, sub.ServiceName)
+		location := fmt.Sprintf(consts.APIPathV1+"/%s/%s", sub.UserID, sub.ServiceName)
 		w.Header().Set("Location", location)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
