@@ -24,7 +24,7 @@ func main() {
 	}
 
 	r := initRouter(db, gdb)
-	if err:=http.ListenAndServe(":8080", r);err!=nil{
+	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}
 
@@ -62,9 +62,9 @@ func initRouter(db *database.DB, gdb *gorm.DB) *chi.Mux {
 	r.Post(consts.APIPathV1, handlers.CreateSubscription(db))
 	r.Get(consts.APIPathV1+"/{"+consts.ServiceName+"}/{"+consts.UserID+"}", handlers.GetSubscription(db))
 	r.Patch(consts.APIPathV1+"/{"+consts.ServiceName+"}/{"+consts.UserID+"}", handlers.UpdateSubscription(db))
-	r.Delete(consts.APIPathV1, handlers.DeleteSubscription(db))
+	r.Delete(consts.APIPathV1+"/{"+consts.ServiceName+"}/{"+consts.UserID+"}", handlers.DeleteSubscription(db))
 	r.Get(consts.APIPathV1, handlers.ListSubscription(gdb))
-	r.Get(consts.APIPathV1+"/pricesSum/{"+consts.ServiceName+"}/{"+consts.UserID+"}/{"+consts.StartDate+"}", handlers.GetPeriodPricesSum(db))
+	r.Get(consts.APIPathV1+"/totalPrice", handlers.GetPeriodTotalPrice(db))
 
 	return r
 }

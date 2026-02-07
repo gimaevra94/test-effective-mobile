@@ -3,6 +3,7 @@ package database
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
@@ -47,7 +48,7 @@ func (db *DB) CreateSubscription(sub *structs.Subscription) error {
 func (db *DB) GetSubscription(sub *structs.Subscription) (structs.Subscription, error) {
 	row := db.DB.QueryRow(consts.SelectQuery, sub.ServiceName, sub.UserID)
 	var result structs.Subscription
-	if err := row.Scan(&result.ServiceName, &result.Price, result.UserID, result.StartDate); err != nil {
+	if err := row.Scan(&result.ServiceName, &result.Price, &result.UserID, &result.StartDate); err != nil {
 		if err == sql.ErrNoRows {
 			return structs.Subscription{}, errors.WithStack(err)
 		}
@@ -69,16 +70,19 @@ func (db *DB) UpdateSubscription(sub *structs.Subscription) (structs.Subscriptio
 	defer func() {
 		if err := recover(); err != nil {
 			tx.Rollback()
-			panic(err)
 		}
 	}()
 
-	row := tx.QueryRow(consts.UpdateQuery, sub.ServiceName, sub.UserID)
+	row := tx.QueryRow(consts.UpdateQuery, sub.Price, sub.ServiceName, sub.UserID)
 	var result structs.Subscription
 	if err = row.Scan(&result.ServiceName, &result.Price, &result.UserID, &result.StartDate); err != nil {
 		if err == sql.ErrNoRows {
 			return structs.Subscription{}, errors.WithStack(err)
 		}
+		return structs.Subscription{}, errors.WithStack(err)
+	}
+
+	if err = tx.Commit(); err != nil {
 		return structs.Subscription{}, errors.WithStack(err)
 	}
 
@@ -105,14 +109,15 @@ func (db *DB) DeleteSubscription(sub *structs.Subscription) error {
 	return nil
 }
 
-func (db *DB) GetPeriodPrices(sub structs.Subscription) (int, error) {
-	row := db.QueryRow(consts.PriceSelectionQuery, sub.ServiceName, sub.UserID, sub.StartDate)
-	var result int
-	if err := row.Scan(&result); err != nil {
+func (db *DB) GetPeriodTotalPrice(serviceName, userID string, fromDate time.Time) (int, error) {
+	row := db.QueryRow(consts.GetTotalPriceSelectQuery, serviceName, userID, fromDate)
+	var totalPrice int
+	if err := row.Scan(&totalPrice); err != nil {
 		if err == sql.ErrNoRows {
+			err := errors.New(consts.NotExist)
 			return 0, errors.WithStack(err)
 		}
 		return 0, errors.WithStack(err)
 	}
-	return result, nil
+	return totalPrice, nil
 }
