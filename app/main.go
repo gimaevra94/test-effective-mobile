@@ -3,12 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/handlers"
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,6 +20,8 @@ import (
 // Инициализирует роутер.
 // Запускает сервер
 func main() {
+	initEnv()
+
 	db, gdb, err, gErr := initDB()
 	if err != nil && gErr != nil {
 		log.Fatal(err, gErr)
@@ -34,6 +38,25 @@ func main() {
 	}
 	defer sqlDB.Close()
 	defer db.DB.Close()
+}
+
+func initEnv() {
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	envVars := []string{
+		"DATABASE_URL",
+		"POSTGRES_PASSWORD",
+	}
+
+	for _, v := range envVars {
+		if os.Getenv(v) == "" {
+			log.Fatal(v)
+			return
+		}
+	}
 }
 
 // Открывает пул db для: create, read, update, delete,
