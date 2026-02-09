@@ -7,6 +7,7 @@ require github.com/go-chi/chi/v5 v5.2.4
 require github.com/pkg/errors v0.9.1
 
 require (
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.11.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
