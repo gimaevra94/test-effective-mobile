@@ -1,4 +1,4 @@
-name: tem
+name: test-effective-mobile
 
 services:
   db:
@@ -6,7 +6,7 @@ services:
     image: postgres:latest
     environment: 
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: /run/secrets/db_password
+      POSTGRES_PASSWORD: /run/secrets/postgres_password
       POSTGRES_DB: db
     ports: 
       - "5432:5432"
@@ -18,9 +18,9 @@ services:
       timeout: 5s
       retries: 3
     secrets:
-      - db_password
+      - postgres_password
 volumes:
   postgres_data:
 secrets:
-  db_password:
+  postgres_password:
     environment: POSTGRES_PASSWORD

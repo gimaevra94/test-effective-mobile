@@ -23,13 +23,8 @@ func main() {
 	initEnv()
 
 	db, gdb, err, gErr := initDB()
-	if err != nil && gErr != nil {
+	if err != nil || gErr != nil {
 		log.Fatal(err, gErr)
-	}
-
-	r := initRouter(db, gdb)
-	if err := http.ListenAndServe(":8080", r); err != nil {
-		log.Fatal(err)
 	}
 
 	sqlDB, err := gdb.DB()
@@ -38,6 +33,11 @@ func main() {
 	}
 	defer sqlDB.Close()
 	defer db.DB.Close()
+
+	r := initRouter(db, gdb)
+	if err := http.ListenAndServe(":8080", r); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func initEnv() {
@@ -47,7 +47,7 @@ func initEnv() {
 	}
 
 	envVars := []string{
-		"DATABASE_URL",
+		"CONNECTION_CFG",
 		"POSTGRES_PASSWORD",
 	}
 
@@ -62,8 +62,7 @@ func initEnv() {
 // Открывает пул db для: create, read, update, delete,
 // и gdb для list.
 func initDB() (*database.DB, *gorm.DB, error, error) {
-	// ДОБАВЬ КОНФИГ
-	var cfg string
+	cfg := os.Getenv("CONNECTION_CFG")
 	db, err := database.DBConn(cfg)
 	if err != nil {
 		return nil, nil, errors.WithStack(err), nil
