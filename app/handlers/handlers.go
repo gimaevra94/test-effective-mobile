@@ -47,12 +47,13 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		if _, err := time.Parse(consts.TimeFormat, sub.StartDate); err != nil {
+		formatedStartDate, err := time.Parse(consts.TimeFormat, sub.StartDate)
+		if err != nil {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InvalidDate, http.StatusBadRequest)
 			return
 		}
 
-		if err := db.CreateSubscription(&sub); err != nil {
+		if err := db.CreateSubscription(&sub, formatedStartDate); err != nil {
 			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}

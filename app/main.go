@@ -8,7 +8,6 @@ import (
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/handlers"
-	"github.com/gimaevra94/test-effective-mobile/app/structs"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
@@ -72,7 +71,6 @@ func initDB() (*database.DB, *gorm.DB, error, error) {
 	if err != nil {
 		return nil, nil, nil, errors.WithStack(err)
 	}
-	gdb.AutoMigrate(&structs.Subscription{})
 
 	return db, gdb, nil, nil
 }

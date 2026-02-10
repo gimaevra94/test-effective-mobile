@@ -31,8 +31,8 @@ func DBConn(cfg string) (*DB, error) {
 
 // Функция реализует операцию "create" добавляя в базу данных новую строку.
 // Проверяет наличие дубля и в случае его отсутствия добавляет поля структуры базу данных.
-func (db *DB) CreateSubscription(sub *structs.Subscription) error {
-	if _, err := db.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserID, sub.StartDate); err != nil {
+func (db *DB) CreateSubscription(sub *structs.Subscription, startDate time.Time) error {
+	if _, err := db.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserID, startDate); err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			err := errors.New(consts.AlreadyExist)
