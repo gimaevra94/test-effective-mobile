@@ -17,10 +17,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-#    secrets:
-#      - postgres_password
+
+  migrate:
+    container_name: migrate
+    build:
+      dockerfile: dockerfile.migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: 
+        - CONNECTION_CFG=postgresql://admin:admin@db:5432/db?sslmode=disable
+    command: >
+      sh -c '
+      migrate -path /migrations -database $$CONNECTION_CFG up
+      '
+
 volumes:
   postgres_data:
-#secrets:
-#  postgres_password:
-#    file: ../postgres_password.txt
