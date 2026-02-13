@@ -8,11 +8,13 @@ import (
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/handlers"
+	"github.com/gimaevra94/test-effective-mobile/app/structs"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 // Открывает соединение с базой данных.
@@ -67,9 +69,17 @@ func initDB() (*database.DB, *gorm.DB, error, error) {
 		return nil, nil, errors.WithStack(err), nil
 	}
 
-	gdb, err := gorm.Open(postgres.Open(cfg), &gorm.Config{})
+	gdb, err := gorm.Open(postgres.Open(cfg), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			SingularTable: true,
+		},
+	})
 	if err != nil {
 		return nil, nil, nil, errors.WithStack(err)
+	}
+
+	if err := gdb.AutoMigrate(&structs.Subscription{}); err != nil {
+		log.Fatal(err)
 	}
 
 	return db, gdb, nil, nil

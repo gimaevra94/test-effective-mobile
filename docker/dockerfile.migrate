@@ -1,2 +1,0 @@
-from migrate/migrate:latest
-copy migrations migrations
