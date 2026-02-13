@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -101,6 +102,7 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+				return
 			} else {
 				errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 				return
@@ -146,6 +148,7 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+				return
 			} else {
 				errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 				return
@@ -187,14 +190,19 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+				return
 			} else {
 				errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
 				return
 			}
 		}
 
+		resp := structs.Responce{
+			Msg: "Deletion successful",
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(resp)
 	}
 }
 
@@ -203,6 +211,7 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 // Фильтры из запроса проверяются на соответствие разрешенным фильтрам.
 // Все фильтры прошедшие проверку добавляются к последовательности запроса к базе данных.
 // Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
+// handlers.go
 func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -222,28 +231,22 @@ func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 
 		for _, v := range allowedFilters {
 			if q_v, ok := query[v]; ok && len(q_v) > 0 && q_v[0] != "" {
-
 				switch v {
 				case "price":
 					if price, err := strconv.Atoi(q_v[0]); err == nil {
-						dbQuery = dbQuery.Where(v+" = $1", price)
+						dbQuery = dbQuery.Where(v+" = ?", price)
 					}
 				default:
-					dbQuery = dbQuery.Where(v+" = $1", q_v[0])
+					dbQuery = dbQuery.Where(v+" = ?", q_v[0])
 				}
 			}
 		}
 
 		subs := []structs.Subscription{}
-		if err := dbQuery.Find(&subs); err != nil {
-			err := errors.New(consts.NotExist)
-			errs.ErrLogAndResp(w, errors.WithStack(err), consts.NotExist, http.StatusNotFound)
+		if err := dbQuery.Find(&subs).Error; err != nil {
+			log.Printf("GORM Find error: %+v", err)
+			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
 			return
-		}
-
-		if len(subs) == 0 {
-			err := errors.New(consts.NotExist)
-			errs.ErrLogAndResp(w, errors.WithStack(err), consts.NotExist, http.StatusOK)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -284,6 +287,7 @@ func GetPeriodTotalPrice(db *database.DB) http.HandlerFunc {
 		result, err := db.GetPeriodTotalPrice(serviceName, userID, fromDate)
 		if err != nil {
 			errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")

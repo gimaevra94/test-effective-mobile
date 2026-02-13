@@ -68,16 +68,34 @@ func (db *DB) UpdateSubscription(sub *structs.Subscription) (structs.Subscriptio
 	}
 
 	defer func() {
-		if err := recover(); err != nil {
+		if r := recover(); r != nil {
 			tx.Rollback()
+			panic(r)
 		}
 	}()
+
+	var current structs.Subscription
+	err = tx.QueryRow(consts.SelectQueryForUpdate, sub.ServiceName, sub.UserID).Scan(&current.Price)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return structs.Subscription{}, errors.WithStack(sql.ErrNoRows)
+		}
+		tx.Rollback()
+		return structs.Subscription{}, errors.WithStack(err)
+	}
+
+	if current.Price == sub.Price {
+		tx.Rollback()
+		err := errors.New("New price is the same as current")
+		return structs.Subscription{}, errors.WithStack(err)
+	}
 
 	row := tx.QueryRow(consts.UpdateQuery, sub.Price, sub.ServiceName, sub.UserID)
 	var result structs.Subscription
 	if err = row.Scan(&result.ServiceName, &result.Price, &result.UserID, &result.StartDate); err != nil {
+		tx.Rollback()
 		if err == sql.ErrNoRows {
-			return structs.Subscription{}, errors.WithStack(err)
+			return structs.Subscription{}, errors.WithStack(sql.ErrNoRows)
 		}
 		return structs.Subscription{}, errors.WithStack(err)
 	}
