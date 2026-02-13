@@ -13,6 +13,7 @@ import (
 	"github.com/gimaevra94/test-effective-mobile/app/database"
 	"github.com/gimaevra94/test-effective-mobile/app/errs"
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -54,6 +55,12 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		}
 
 		if err := db.CreateSubscription(&sub, formatedStartDate); err != nil {
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+				errs.ErrLogAndResp(w, err, consts.AlreadyExist, http.StatusConflict)
+				return
+			}
+
 			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
