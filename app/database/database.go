@@ -128,13 +128,18 @@ func (db *DB) DeleteSubscription(sub *structs.Subscription) error {
 }
 
 func (db *DB) GetPeriodTotalPrice(serviceName, userID string, fromDate time.Time) (int, error) {
-	row := db.QueryRow(consts.GetTotalPriceSelectQuery, serviceName, userID, fromDate)
+	dateOnly := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, time.UTC)
+
+	var ns, nuid sql.NullString
+	ns.Valid = serviceName != ""
+	ns.String = serviceName
+
+	nuid.Valid = userID != ""
+	nuid.String = userID
+
+	row := db.QueryRow(consts.GetTotalPriceSelectQuery, ns, nuid, dateOnly)
 	var totalPrice int
 	if err := row.Scan(&totalPrice); err != nil {
-		if err == sql.ErrNoRows {
-			err := errors.New(consts.NotExist)
-			return 0, errors.WithStack(err)
-		}
 		return 0, errors.WithStack(err)
 	}
 	return totalPrice, nil

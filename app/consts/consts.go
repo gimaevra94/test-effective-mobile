@@ -19,7 +19,7 @@ const (
 	UpdateQuery              = "update subscription set " + Price + " = $1 where " + ServiceName + " = $2 and " + UserID + " = $3 returning " + ServiceName + ", " + Price + ", " + UserID + ", " + StartDate
 	DeleteQuery              = "delete from subscription where " + ServiceName + " = $1 and " + UserID + " = $2"
 	PriceSelectionQuery      = "select " + Price + " from subscription where " + ServiceName + " = $1 and " + UserID + " = $2 and " + StartDate + " = $3"
-	GetTotalPriceSelectQuery = "select coalesce(sum(price),0) from subscription where ($1 is null or " + ServiceName + " = $1) and ($2 is null or " + UserID + " = $2) and to_date(" + StartDate + ", 'MM-YYYY') <= $3"
+	GetTotalPriceSelectQuery = `SELECT COALESCE(SUM(price), 0) FROM subscription WHERE ($1::text IS NULL OR service_name = $1) AND ($2::text IS NULL OR user_id = $2) AND start_date >= $3::date`
 )
 
 // Requests paths values

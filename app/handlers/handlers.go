@@ -19,6 +19,18 @@ import (
 	"gorm.io/gorm"
 )
 
+
+// @Summary Создать новую подписку
+// @Description Создает новую запись подписки
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param subscription body structs.Subscription true "Данные подписки"
+// @Success 201 {object} structs.Subscription
+// @Failure 400 {object} structs.Responce
+// @Failure 409 {object} structs.Responce
+// @Failure 500 {object} structs.Responce
+// @Router / [post]
 // Функция реализует 'create' API.
 // Приходящий запрос декодируется.
 // В запросе структура которую необходимо сохранить в базу данных.
@@ -74,6 +86,16 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// @Summary Получить подписку
+// @Description Возвращает информацию о подписке по имени сервиса и ID пользователя
+// @Tags subscriptions
+// @Produce json
+// @Param service_name path string true "Название сервиса"
+// @Param user_id path string true "ID пользователя"
+// @Success 200 {object} structs.Subscription
+// @Failure 404 {object} structs.Responce
+// @Failure 500 {object} structs.Responce
+// @Router /{service_name}/{user_id} [get]
 // Функция реализует 'get' API.
 // Из пути запроса берутся поля составляющие ключ для поиска в базе данных.
 // Проверяются на наличие пустых полей и передаются в виде структуры в db.GetSubscriprion для работы с базой данных.
@@ -115,6 +137,19 @@ func GetSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// @Summary Обновить подписку
+// @Description Обновляет существующую подписку
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param service_name path string true "Название сервиса"
+// @Param user_id path string true "ID пользователя"
+// @Param subscription body structs.Subscription true "Данные для обновления (только цена)"
+// @Success 200 {object} structs.Subscription
+// @Failure 400 {object} structs.Responce
+// @Failure 404 {object} structs.Responce
+// @Failure 500 {object} structs.Responce
+// @Router /{service_name}/{user_id} [patch]
 // Функция реализует 'update' API.
 // Приходящий запрос декодируется.
 // В запросе хранится новое значение которым нужно заменить значение из базы данных.
@@ -161,6 +196,16 @@ func UpdateSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// @Summary Удалить подписку
+// @Description Удаляет подписку по имени сервиса и ID пользователя
+// @Tags subscriptions
+// @Produce json
+// @Param service_name path string true "Название сервиса"
+// @Param user_id path string true "ID пользователя"
+// @Success 200 {object} structs.Responce
+// @Failure 404 {object} structs.Responce
+// @Failure 500 {object} structs.Responce
+// @Router /{service_name}/{user_id} [delete]
 // Функция реализует 'delete' API.
 // Приходящий запрос декодируется.
 // Он хранит в себе поля составляющие ключ для поиска в базе данных по которым необходимо найти строку и удалить.
@@ -206,6 +251,17 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 	}
 }
 
+// @Summary Список всех подписок
+// @Description Возвращает список всех подписок с возможностью фильтрации
+// @Tags subscriptions
+// @Produce json
+// @Param service_name query string false "Фильтр по названию сервиса"
+// @Param price query int false "Фильтр по цене"
+// @Param user_id query string false "Фильтр по ID пользователя"
+// @Param start_date query string false "Фильтр по дате начала (MM-YYYY)"
+// @Success 200 {array} structs.Subscription
+// @Failure 500 {object} structs.Responce
+// @Router / [get]
 // Функция реализует 'list' API.
 // В качестве соединения с базой данных принимает не *database.DB, а *grom.DB.
 // Фильтры из запроса проверяются на соответствие разрешенным фильтрам.
@@ -255,6 +311,17 @@ func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 	}
 }
 
+// @Summary Общая стоимость подписок за период
+// @Description Возвращает общую стоимость подписок за указанный период
+// @Tags subscriptions
+// @Produce json
+// @Param from query string true "Дата начала периода (MM-YYYY)"
+// @Param service_name query string false "Фильтр по названию сервиса"
+// @Param user_id query string false "Фильтр по ID пользователя"
+// @Success 200 {object} map[string]int
+// @Failure 400 {object} structs.Responce
+// @Failure 500 {object} structs.Responce
+// @Router /totalPrice [get]
 // Функция принимает из запроса ключи, проверяет их на соответствие формату,
 // и вызывает db.GetPeriodPricesSum для поиска строк по этим ключам.
 // База данных возвращает стоимость подписки за 1 месяц.
@@ -286,7 +353,7 @@ func GetPeriodTotalPrice(db *database.DB) http.HandlerFunc {
 
 		result, err := db.GetPeriodTotalPrice(serviceName, userID, fromDate)
 		if err != nil {
-			errs.ErrLogAndResp(w, err, consts.NotExist, http.StatusNotFound)
+			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
 

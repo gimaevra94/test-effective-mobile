@@ -12,11 +12,18 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
+// @title Subscription API
+// @version 1.0
+// @description API для управления подписками пользователей на сервисы
+// @host localhost:8080
+// @BasePath /api/v1
+// @schemes http
 // Открывает соединение с базой данных.
 // Инициализирует роутер.
 // Запускает сервер
@@ -95,6 +102,16 @@ func initRouter(db *database.DB, gdb *gorm.DB) *chi.Mux {
 	r.Delete(consts.APIPathV1+"/{"+consts.ServiceName+"}/{"+consts.UserID+"}", handlers.DeleteSubscription(db))
 	r.Get(consts.APIPathV1, handlers.ListSubscription(gdb))
 	r.Get(consts.APIPathV1+"/totalPrice", handlers.GetPeriodTotalPrice(db))
+
+	r.Get("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./docs/swagger.json")
+	})
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+		httpSwagger.DeepLinking(true),
+		httpSwagger.DocExpansion("list"),
+	))
 
 	return r
 }
