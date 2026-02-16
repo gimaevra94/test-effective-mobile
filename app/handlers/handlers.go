@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
-
 
 // @Summary Создать новую подписку
 // @Description Создает новую запись подписки
@@ -49,11 +47,11 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 		}
 
 		var sub structs.Subscription
-		defer r.Body.Close()
 		if err := json.NewDecoder(r.Body).Decode(&sub); err != nil {
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.BadInput, http.StatusBadRequest)
 			return
 		}
+		defer r.Body.Close()
 
 		if sub.ServiceName == "" || sub.Price <= 0 || sub.UserID == "" || sub.StartDate == "" {
 			err := errors.New(consts.EmptyValue)
@@ -67,7 +65,9 @@ func CreateSubscription(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		if err := db.CreateSubscription(&sub, formatedStartDate); err != nil {
+		sub.FormatedStartDate = formatedStartDate
+
+		if err := db.CreateSubscription(&sub); err != nil {
 			var pqErr *pq.Error
 			if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 				errs.ErrLogAndResp(w, err, consts.AlreadyExist, http.StatusConflict)
@@ -267,7 +267,6 @@ func DeleteSubscription(db *database.DB) http.HandlerFunc {
 // Фильтры из запроса проверяются на соответствие разрешенным фильтрам.
 // Все фильтры прошедшие проверку добавляются к последовательности запроса к базе данных.
 // Выполняется запрос к базе данных, результат запроса кодируется в json и отправляется клиенту.
-// handlers.go
 func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -300,7 +299,6 @@ func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 
 		subs := []structs.Subscription{}
 		if err := dbQuery.Find(&subs).Error; err != nil {
-			log.Printf("GORM Find error: %+v", err)
 			errs.ErrLogAndResp(w, errors.WithStack(err), consts.InternalServerError, http.StatusInternalServerError)
 			return
 		}
@@ -324,8 +322,7 @@ func ListSubscription(gdb *gorm.DB) http.HandlerFunc {
 // @Router /totalPrice [get]
 // Функция принимает из запроса ключи, проверяет их на соответствие формату,
 // и вызывает db.GetPeriodPricesSum для поиска строк по этим ключам.
-// База данных возвращает стоимость подписки за 1 месяц.
-// После этого вызывается priceSum которая считает сумму подписок за период.
+// База данных возвращает сумму подписок по этим ключам.
 // Результат кодируется в JSON и отправляется клиенту.
 func GetPeriodTotalPrice(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -348,10 +345,18 @@ func GetPeriodTotalPrice(db *database.DB) http.HandlerFunc {
 			return
 		}
 
+		dateOnly := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, time.UTC)
+
 		serviceName := r.URL.Query().Get(consts.ServiceName)
 		userID := r.URL.Query().Get(consts.UserID)
 
-		result, err := db.GetPeriodTotalPrice(serviceName, userID, fromDate)
+		sub := structs.Subscription{
+			ServiceName:       serviceName,
+			UserID:            userID,
+			FormatedStartDate: dateOnly,
+		}
+		
+		result, err := db.GetPeriodTotalPrice(&sub)
 		if err != nil {
 			errs.ErrLogAndResp(w, err, consts.InternalServerError, http.StatusInternalServerError)
 			return

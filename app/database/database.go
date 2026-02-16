@@ -3,7 +3,6 @@ package database
 
 import (
 	"database/sql"
-	"time"
 
 	"github.com/gimaevra94/test-effective-mobile/app/consts"
 	"github.com/gimaevra94/test-effective-mobile/app/structs"
@@ -31,8 +30,8 @@ func DBConn(cfg string) (*DB, error) {
 
 // Функция реализует операцию "create" добавляя в базу данных новую строку.
 // Проверяет наличие дубля и в случае его отсутствия добавляет поля структуры базу данных.
-func (db *DB) CreateSubscription(sub *structs.Subscription, startDate time.Time) error {
-	if _, err := db.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserID, startDate); err != nil {
+func (db *DB) CreateSubscription(sub *structs.Subscription) error {
+	if _, err := db.Exec(consts.InsertQuery, sub.ServiceName, sub.Price, sub.UserID, sub.FormatedStartDate); err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
 			err := errors.New(consts.AlreadyExist)
@@ -58,8 +57,8 @@ func (db *DB) GetSubscription(sub *structs.Subscription) (structs.Subscription, 
 }
 
 // Функция реализует операцию "update" обновляя существующую в базе данных строку.
-// В одном запросе происходит операция обновления и возврата строки.
-// По этому сначала открывается транзакция и через нее выполняется запрос.
+// В этой функции происзодит сразу 3 запроса.
+// По этому сначала открывается транзакция и уже через нее выполняются запросы.
 // Поля возвращенной строки сканируются в структуру которая возвращается вызывающей функции.
 func (db *DB) UpdateSubscription(sub *structs.Subscription) (structs.Subscription, error) {
 	tx, err := db.Begin()
@@ -127,17 +126,16 @@ func (db *DB) DeleteSubscription(sub *structs.Subscription) error {
 	return nil
 }
 
-func (db *DB) GetPeriodTotalPrice(serviceName, userID string, fromDate time.Time) (int, error) {
-	dateOnly := time.Date(fromDate.Year(), fromDate.Month(), fromDate.Day(), 0, 0, 0, 0, time.UTC)
+// Функция агрегирует стоимость подписок за период по ключу ""service_name + user_id".
+func (db *DB) GetPeriodTotalPrice(sub *structs.Subscription) (int, error) {
 
-	var ns, nuid sql.NullString
-	ns.Valid = serviceName != ""
-	ns.String = serviceName
+	var sn, id sql.NullString
+	sn.Valid = sub.ServiceName != ""
+	sn.String = sub.ServiceName
+	id.Valid = sub.UserID != ""
+	id.String = sub.UserID
 
-	nuid.Valid = userID != ""
-	nuid.String = userID
-
-	row := db.QueryRow(consts.GetTotalPriceSelectQuery, ns, nuid, dateOnly)
+	row := db.QueryRow(consts.GetTotalPriceSelectQuery, sn, id, sub.FormatedStartDate)
 	var totalPrice int
 	if err := row.Scan(&totalPrice); err != nil {
 		return 0, errors.WithStack(err)
